@@ -43,8 +43,10 @@ cabal-version:       >=1.8
 executable instantrun
   hs-source-dirs:    src
   main-is:           Main.hs
+  other-modules:     IdleTime
   ghc-options:       -Wall -O
   cpp-options:       -DCABAL
+  extra-libraries:   Xss
   build-depends:     base >= 4 && < 5,
                      cmdargs,
                      containers,

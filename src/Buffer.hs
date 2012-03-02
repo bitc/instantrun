@@ -10,8 +10,11 @@ module Buffer
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM (TVar, atomically, newTVar, readTVar, retry, writeTVar)
+import Control.Exception (bracket)
+import Control.Monad (when)
 import qualified Data.Map as M
 
+import IdleTime
 import Launcher (BufferedProg, destroy, display, launch)
 import Util (whisper)
 
@@ -62,18 +65,30 @@ createNeededBuffersLoop buffers = do
     createBuffer buffers hd
     createNeededBuffersLoop buffers
 
+defaultPollTime, defaultIdleTime :: Int
+defaultPollTime = 2000
+defaultIdleTime = 10000
+
 idleCreateBuffersLoop :: BufferState -> IO ()
 idleCreateBuffersLoop buffers = do
-    threadDelay 2000000
-    atomically $ do
-        m <- readTVar (ready buffers)
-        let mb = M.foldrWithKey f Nothing m
-        case mb of
-            Just p -> do
-                queue <- readTVar (needed buffers)
-                writeTVar (needed buffers) (queue ++ [p])
-            Nothing -> return ()
-    idleCreateBuffersLoop buffers
+    let loop :: IdleTimeQuerier -> IO ()
+        loop idleQ = do
+            idle <- idleTimeQuery idleQ
+            whisper $ "idle time: " ++ show idle
+            when (idle >= toInteger defaultIdleTime) spawn
+            threadDelay (defaultPollTime * 1000)
+            loop idleQ
+        spawn :: IO ()
+        spawn = do
+            atomically $ do
+                m <- readTVar (ready buffers)
+                let mb = M.foldrWithKey f Nothing m
+                case mb of
+                    Just p -> do
+                        queue <- readTVar (needed buffers)
+                        writeTVar (needed buffers) (queue ++ [p])
+                    Nothing -> return ()
+    bracket createIdleTimeQuerier destroyIdleTimeQuerier loop
     where
     f :: String -> (Int, [a]) -> Maybe String -> Maybe String
     f _ _ p@(Just _) = p

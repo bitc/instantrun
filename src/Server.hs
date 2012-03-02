@@ -30,6 +30,7 @@ startServer cfg = do
         (\sock -> sClose sock >> removeSocketFile)
         $ \sock -> do
             bracket createBufferState destroyBufferState $ \bufferState -> do
+                -- TODO kill these threads during shutdown
                 _ <- forkIO (createNeededBuffersLoop bufferState)
                 _ <- forkIO (idleCreateBuffersLoop bufferState)
                 waitForConnection bufferState sock
