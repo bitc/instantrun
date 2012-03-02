@@ -1,0 +1,57 @@
+name:                instantrun
+version:             0.1.0.0
+synopsis:            Preloads graphical applications in a hidden window so they can be started instantly
+description:
+
+    When working in a graphical desktop, there are applications that you probably
+    launch often, such as a terminal emulator, and your text editor.
+
+    Even though these programs usually start up fairly quickly (like half a
+    second), the wait can be noticeable, and it builds up as you launch many
+    instances of your applications throughout the course of your day.
+
+    The wait is especially frustrating if you just need to perform a short task.
+    Let's say you want to open a terminal to check the output of `uptime`.  Typing
+    and running the command itself takes only about a second, so having to wait an
+    extra half second just for the terminal to start can be maddening. And if you
+    have a bloated configuration for your shell (such as loading bash completions),
+    then the wait can be even much longer than half a second.
+
+    Working with text editors shares the same problem. If you need to make a small
+    change to a file, then waiting for Vim to load is painful. During your day, as
+    you edit many files, this minor inconvenience builds up, and can be bad for
+    your mental health. If Vim is configured with a lot of plugins then the start
+    time can even be quite substantial, making the situation much worse. (It is
+    true that for long editing/coding sessions, one usually uses a single Vim
+    instance, but I find that in practice I am constantly launching Vim from a
+    shell in order to open various random files)
+
+    Wouldn't it be great if these programs could be started instantly?
+
+    `instantrun` is the solution. It is a service that runs in the background, and
+    pre-starts hidden copies of your applications. When you want to start an
+    application, all it needs to do is instantly unhide the application's window.
+
+license:             MIT
+license-file:        LICENSE
+author:              Bit Connor
+maintainer:          bit@mutantlemon.com
+category:            Utils
+build-type:          Simple
+cabal-version:       >=1.8
+
+executable instantrun
+  hs-source-dirs:    src
+  main-is:           Main.hs
+  ghc-options:       -Wall -O
+  cpp-options:       -DCABAL
+  build-depends:     base >= 4 && < 5,
+                     cmdargs,
+                     containers,
+                     directory,
+                     filepath,
+                     network,
+                     process,
+                     stm,
+                     unix,
+                     X11
