@@ -9,6 +9,7 @@ import System.IO.Error (isDoesNotExistError)
 import System.Posix.Directory (changeWorkingDirectory)
 import System.Posix.IO
 import System.Posix.Process (exitImmediately, createSession, forkProcess)
+import Control.Concurrent (forkIO, threadDelay)
 
 import Client (runProgram, serverShutdown, serverStatus)
 import Config
@@ -28,20 +29,23 @@ main = do
         CommandShutdown -> connect >>= serverShutdown
         CommandFlushBuffer -> error "TODO"
         CommandFillBuffer -> error "TODO"
-        CommandRun prog args -> do
-            r <- tryJust (guard . isDoesNotExistError) connect
-            case r of
-                Left e -> do
-                    whisper $ "Connection failed: " ++ (show e)
-                    error "TODO start server in background"
-                Right handle -> do
-                    if (null prog)
-                        then do
-                            -- TODO clean up
-                            putStrLn "You must supply an argument"
-                        else do
-                            pwd <- getCurrentDirectory
-                            runProgram handle prog pwd args
+        CommandRun prog args -> if (null prog)
+            then
+                -- TODO clean up
+                putStrLn "You must supply an argument"
+            else do
+                r <- tryJust (guard . isDoesNotExistError) connect
+                case r of
+                    Left e -> do
+                        whisper $ "Connection failed: " ++ (show e)
+                        daemonize $ do
+                            _ <- forkIO $ do
+                                threadDelay 1000000
+                                putStrLn "whoah"
+                            startServer cfg
+                    Right handle -> do
+                        pwd <- getCurrentDirectory
+                        runProgram handle prog pwd args
 
 daemonize :: IO () -> IO ()
 daemonize program = do
